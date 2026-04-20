@@ -61,7 +61,7 @@ Estación: <input type="text" id="estacion"><br><br>
 <button onclick="exportar()">📤 Exportar</button>
 <button onclick="enviarCorreo()">📧 Enviar</button>
 <button onclick="limpiarTodo()">🗑 Limpiar</button>
-
+<button onclick="verHistorial()">📊 Historial</button>
 <script>
 
 // PRODUCTOS
@@ -183,6 +183,24 @@ function limpiarTodo() {
     localStorage.removeItem("capturaTemporal");
 }
 
+function verHistorial() {
+
+    let historial = JSON.parse(localStorage.getItem("inventarios") || "[]");
+
+    if (historial.length === 0) {
+        alert("No hay inventarios guardados");
+        return;
+    }
+
+    let texto = "HISTORIAL DE INVENTARIOS:\n\n";
+
+    historial.forEach((r, i) => {
+        texto += `${i+1}. ${r.estacion} - ${r.fecha}\n`;
+    });
+
+    alert(texto);
+}
+      
 // NAVEGACIÓN VERTICAL
 document.addEventListener("keydown", function(e) {
 
@@ -206,6 +224,7 @@ document.addEventListener("keydown", function(e) {
 
 });
 
+      
 // INICIO
 document.addEventListener("DOMContentLoaded", function() {
     crearTabla();
