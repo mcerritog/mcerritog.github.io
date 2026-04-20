@@ -5,16 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inventario Lubricantes</title>
 
-<link rel="manifest" href="manifest.json">
-
 <style>
 body { font-family: Arial; margin: 0; padding: 10px; background:#f5f5f5;}
 header { background:#0d47a1; color:white; padding:15px; text-align:center; font-size:18px;}
 table { border-collapse: collapse; width: 100%; background:white; }
 th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
 th { background: #1976d2; color:white; }
-input { width: 50px; text-align: center; }
-button { width:48%; padding:12px; margin:5px 1%; font-size:14px; }
+
+input[type=number] {
+    width: 55px;
+    height: 35px;
+    font-size: 14px;
+    text-align: center;
+}
+
+button {
+    width:32%;
+    padding:12px;
+    margin:5px 1%;
+    font-size:14px;
+}
+
 .total { font-weight: bold; background: #e8f5e9; }
 </style>
 </head>
@@ -23,9 +34,7 @@ button { width:48%; padding:12px; margin:5px 1%; font-size:14px; }
 
 <header>📊 Inventario de Lubricantes</header>
 
-<div>
 Estación: <input type="text" id="estacion"><br><br>
-</div>
 
 <table id="tabla">
 <thead>
@@ -48,14 +57,14 @@ Estación: <input type="text" id="estacion"><br><br>
 <button onclick="exportar()">📤 Exportar</button>
 <button onclick="enviarCorreo()">📧 Enviar</button>
 
-    <script>
+<script>
 
+// 🔥 PRODUCTOS
 const productos = [
-"LIMPIA PARABRISAS FULL PRO 200 ML","LIMPIA PARABRISAS FULLPRO .946 ML","DIRECCION HIDRAULICA 200 ML","LIQUIDO DE FRENOS 200 ML","ANTICONGELANTE IDEAL .946 ML","ANTICONGELANTE  IDEAL 3.79 ML","ANTICONGELANTE  OPTIMA .946 ML","ANTICONGELANTE  OPTIMA 3.79 L","QS SERIES III SAE 50 .946 ML","QS SERIES III SAE 50 5 LT","QS MAX VISCOSIDAD SAE 25W/50 CF4 .946 ML","QS MAX VISCOSIDAD SEA 25W/50 CF4 5 LT","HELIX HX3 HM25W60 SL_A1W9","HELIX HX5 SN 20W50 _A1W9","HHELIX HX7 SN 10W40 SN_A1W9","HLX HX7 SN PLUS 10W30 SN_LATA","HLX HX8 PRO AG5W30 DEX1_LATA","FULL PRO ARRANCADOR SPRAY 400 ML","QS ALTO KILOMETRAJE SAE 15W40 API SN","QS DEXTRONATF III","QS LIMPIADOR DE INYECTORES (XTREME GAS)","QS POWER RIDER 2T J-FB","QS SERIES III SAE 40","QS RACING MULT. SAE 20W50","QS HD SAE 40","ADVANCE AX 5 MOTOS 20 .946 ML","SHELL ADVAN 4TUL MOTOS SAE 15W-50 SN","BIDON UREA ULTRA BLUE 20 LTS"
+"LIMPIA PARABRISAS FULL PRO 200 ML","LIMPIA PARABRISAS FULLPRO .946 ML","DIRECCION HIDRAULICA 200 ML","LIQUIDO DE FRENOS 200 ML","ANTICONGELANTE IDEAL .946 ML","ANTICONGELANTE IDEAL 3.79 ML","ANTICONGELANTE OPTIMA .946 ML","ANTICONGELANTE OPTIMA 3.79 L","QS SERIES III SAE 50 .946 ML","QS SERIES III SAE 50 5 LT","QS MAX VISCOSIDAD SAE 25W/50 CF4 .946 ML","QS MAX VISCOSIDAD 25W/50 CF4 5 LT","HELIX HX3 25W60","HELIX HX5 20W50","HELIX HX7 10W40","HELIX HX7 10W30","HELIX HX8 5W30","ARRANCADOR SPRAY","QS 15W40 SN","QS DEXTRON III","LIMPIADOR INYECTORES","ACEITE 2T","QS SAE 40","QS 20W50","QS HD SAE 40","ADVANCE AX5","ADVANCE 15W50","UREA 20L"
 ];
 
-let datosCaptura = [];
-
+// 🔥 CREAR TABLA
 function crearTabla() {
     let tbody = document.querySelector("#tabla tbody");
     tbody.innerHTML = "";
@@ -63,8 +72,8 @@ function crearTabla() {
     productos.forEach((p, i) => {
         let fila = `<tr>
             <td>${p}</td>
-            ${[0,1,2,3,4,5,6].map(() =>
-                `<td><input type="number" data-row="${i}" class="val"></td>`
+            ${[0,1,2,3,4,5,6].map((col) =>
+                `<td><input type="number" data-row="${i}" data-col="${col}" class="val" step="1"></td>`
             ).join("")}
             <td class="total" id="total-${i}">0</td>
         </tr>`;
@@ -72,11 +81,36 @@ function crearTabla() {
     });
 
     document.querySelectorAll(".val").forEach(input => {
-       input.addEventListener("input", function() {
-    calcularFila.call(this);
-    guardarTemporal();
+        input.addEventListener("input", function() {
+            calcularFila.call(this);
+            guardarTemporal();
+        });
     });
 }
+
+// 🔥 CALCULAR
+function calcularFila() {
+    let row = this.dataset.row;
+    let inputs = document.querySelectorAll(`input[data-row='${row}']`);
+    let suma = 0;
+    inputs.forEach(i => suma += Number(i.value) || 0);
+    document.getElementById(`total-${row}`).innerText = suma;
+}
+
+// 🔥 AUTOGUARDADO
+function guardarTemporal() {
+    let datos = [];
+
+    productos.forEach((p, i) => {
+        let inputs = document.querySelectorAll(`input[data-row='${i}']`);
+        let valores = Array.from(inputs).map(i => i.value || "");
+        datos.push(valores);
+    });
+
+    localStorage.setItem("capturaTemporal", JSON.stringify(datos));
+}
+
+// 🔥 CARGAR AUTOGUARDADO
 function cargarTemporal() {
     let datos = JSON.parse(localStorage.getItem("capturaTemporal") || "[]");
 
@@ -87,21 +121,12 @@ function cargarTemporal() {
         });
     });
 
-    // recalcular totales
     document.querySelectorAll(".val").forEach(input => {
         input.dispatchEvent(new Event("input"));
     });
 }
-                                              
-function calcularFila() {
-    let row = this.dataset.row;
-    let inputs = document.querySelectorAll(`input[data-row='${row}']`);
-    let suma = 0;
-    inputs.forEach(i => suma += Number(i.value) || 0);
-    document.getElementById(`total-${row}`).innerText = suma;
-}
 
-// 💾 GUARDAR
+// 💾 GUARDAR DEFINITIVO
 function guardar() {
     let estacion = document.getElementById("estacion").value;
     if (!estacion) return alert("Ingresa estación");
@@ -117,21 +142,19 @@ function guardar() {
         let valores = Array.from(inputs).map(i => Number(i.value) || 0);
         let total = valores.reduce((a,b)=>a+b,0);
 
-        registro.productos.push({
-            producto: p,
-            valores: valores,
-            total: total
-        });
+        registro.productos.push({ producto: p, valores: valores, total: total });
     });
 
     let historial = JSON.parse(localStorage.getItem("inventarios") || "[]");
     historial.push(registro);
     localStorage.setItem("inventarios", JSON.stringify(historial));
 
+    localStorage.removeItem("capturaTemporal");
+
     alert("Guardado correctamente ✔");
 }
 
-// 📤 EXPORTAR EXCEL
+// 📤 EXPORTAR
 function exportar() {
     let historial = JSON.parse(localStorage.getItem("inventarios") || "[]");
 
@@ -150,45 +173,52 @@ function exportar() {
     a.click();
 }
 
-// 📧 ENVIAR CORREO
+// 📧 CORREO
 function enviarCorreo() {
     let historial = JSON.parse(localStorage.getItem("inventarios") || "[]");
     if (historial.length === 0) return alert("No hay datos");
 
     let ultimo = historial[historial.length - 1];
 
-    let cuerpo = `Inventario Estación: ${ultimo.estacion}%0D%0AFecha: ${ultimo.fecha}%0D%0A%0D%0A`;
+    let cuerpo = `Inventario ${ultimo.estacion}%0D%0A${ultimo.fecha}%0D%0A%0D%0A`;
 
     ultimo.productos.forEach(p => {
-        cuerpo += `${p.producto} - Total: ${p.total}%0D%0A`;
+        cuerpo += `${p.producto}: ${p.total}%0D%0A`;
     });
 
-    let mail = `mailto:?subject=Inventario ${ultimo.estacion}&body=${cuerpo}`;
-    window.location.href = mail;
+    window.location.href = `mailto:?subject=Inventario ${ultimo.estacion}&body=${cuerpo}`;
 }
 
-function guardarTemporal() {
-    let datos = [];
+// 🔥 NAVEGACIÓN VERTICAL
+document.addEventListener("keydown", function(e) {
 
-    productos.forEach((p, i) => {
-        let inputs = document.querySelectorAll(`input[data-row='${i}']`);
-        let valores = Array.from(inputs).map(i => i.value || "");
+    let current = document.activeElement;
+    if (!current.classList.contains("val")) return;
 
-        datos.push(valores);
-    });
+    let row = parseInt(current.dataset.row);
+    let col = parseInt(current.dataset.col);
 
-    localStorage.setItem("capturaTemporal", JSON.stringify(datos));
-}
-        
+    if (e.key === "Enter" || e.key === "ArrowDown") {
+        e.preventDefault();
+        let next = document.querySelector(`input[data-row='${row + 1}'][data-col='${col}']`);
+        if (next) next.focus();
+    }
+
+    if (e.key === "ArrowUp") {
+        e.preventDefault();
+        let prev = document.querySelector(`input[data-row='${row - 1}'][data-col='${col}']`);
+        if (prev) prev.focus();
+    }
+
+});
+
 // 🔥 INICIO
 document.addEventListener("DOMContentLoaded", function() {
     crearTabla();
     cargarTemporal();
 });
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js');
-}
 
-
-        
 </script>
+
+</body>
+</html>
