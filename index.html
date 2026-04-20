@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventario Lubricantes</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+body { font-family: Arial; margin: 0; padding: 10px; background:#f5f5f5;}
+header { background:#0d47a1; color:white; padding:15px; text-align:center; font-size:18px;}
+table { border-collapse: collapse; width: 100%; background:white; }
+th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+th { background: #1976d2; color:white; }
+input { width: 50px; text-align: center; }
+button { width:48%; padding:12px; margin:5px 1%; font-size:14px; }
+.total { font-weight: bold; background: #e8f5e9; }
+</style>
+</head>
+
+<body>
+
+<header>📊 Inventario de Lubricantes</header>
+
+<div>
+Estación: <input type="text" id="estacion"><br><br>
+</div>
+
+<table id="tabla">
+<thead>
+<tr>
+<th>Producto</th>
+<th>Bodega</th>
+<th>1</th>
+<th>2</th>
+<th>3</th>
+<th>4</th>
+<th>A</th>
+<th>B</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<button onclick="guardar()">💾 Guardar</button>
+<button onclick="exportar()">📤 Exportar</button>
+
+<script>
+
+// 🔴 PEGA AQUÍ TUS PRODUCTOS
+const productos = [
+"LIMPIA PARABRISAS FULL PRO 200 ML","LIMPIA PARABRISAS FULLPRO .946 ML","DIRECCION HIDRAULICA 200 ML","LIQUIDO DE FRENOS 200 ML","ANTICONGELANTE IDEAL .946 ML","ANTICONGELANTE  IDEAL 3.79 ML","ANTICONGELANTE  OPTIMA .946 ML","ANTICONGELANTE  OPTIMA 3.79 L","QS SERIES III SAE 50 .946 ML","QS SERIES III SAE 50 5 LT","QS MAX VISCOSIDAD SAE 25W/50 CF4 .946 ML","QS MAX VISCOSIDAD SEA 25W/50 CF4 5 LT","HELIX HX3 HM25W60 SL_A1W9","HELIX HX5 SN 20W50 _A1W9","HHELIX HX7 SN 10W40 SN_A1W9","HLX HX7 SN PLUS 10W30 SN_LATA","HLX HX8 PRO AG5W30 DEX1_LATA","FULL PRO ARRANCADOR SPRAY 400 ML","QS ALTO KILOMETRAJE SAE 15W40 API SN","QS DEXTRONATF III","QS LIMPIADOR DE INYECTORES (XTREME GAS)","QS POWER RIDER 2T J-FB","QS SERIES III SAE 40","QS RACING MULT. SAE 20W50","QS HD SAE 40","ADVANCE AX 5 MOTOS 20 .946 ML","SHELL ADVAN 4TUL MOTOS SAE 15W-50 SN","BIDON UREA ULTRA BLUE 20 LTS",
+];
+
+function crearTabla() {
+    let tbody = document.querySelector("#tabla tbody");
+    tbody.innerHTML = "";
+
+    productos.forEach((p, i) => {
+        let fila = `<tr>
+            <td>${p}</td>
+            ${[0,1,2,3,4,5,6].map(() =>
+                `<td><input type="number" data-row="${i}" class="val"></td>`
+            ).join("")}
+            <td class="total" id="total-${i}">0</td>
+        </tr>`;
+        tbody.innerHTML += fila;
+    });
+
+    document.querySelectorAll(".val").forEach(input => {
+        input.addEventListener("input", calcularFila);
+    });
+}
+
+function calcularFila() {
+    let row = this.dataset.row;
+    let inputs = document.querySelectorAll(`input[data-row='${row}']`);
+    let suma = 0;
+    inputs.forEach(i => suma += Number(i.value) || 0);
+    document.getElementById(`total-${row}`).innerText = suma;
+}
+
+function guardar() {
+    alert("Guardado ✔");
+}
+
+function exportar() {
+    alert("Exportado ✔");
+}
+
+// 🔥 CLAVE PARA QUE FUNCIONE EN CELULAR
+document.addEventListener("DOMContentLoaded", crearTabla);
+
+// 🔥 REGISTRO PWA
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js');
+}
+
+</script>
+
+</body>
+</html>
