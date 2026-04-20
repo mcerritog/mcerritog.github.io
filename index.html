@@ -72,10 +72,27 @@ function crearTabla() {
     });
 
     document.querySelectorAll(".val").forEach(input => {
-        input.addEventListener("input", calcularFila);
+       input.addEventListener("input", function() {
+    calcularFila.call(this);
+    guardarTemporal();
     });
 }
+function cargarTemporal() {
+    let datos = JSON.parse(localStorage.getItem("capturaTemporal") || "[]");
 
+    datos.forEach((fila, i) => {
+        fila.forEach((valor, j) => {
+            let input = document.querySelectorAll(`input[data-row='${i}']`)[j];
+            if (input) input.value = valor;
+        });
+    });
+
+    // recalcular totales
+    document.querySelectorAll(".val").forEach(input => {
+        input.dispatchEvent(new Event("input"));
+    });
+}
+                                              
 function calcularFila() {
     let row = this.dataset.row;
     let inputs = document.querySelectorAll(`input[data-row='${row}']`);
@@ -150,11 +167,28 @@ function enviarCorreo() {
     window.location.href = mail;
 }
 
-// 🔥 INICIO
-document.addEventListener("DOMContentLoaded", crearTabla);
+function guardarTemporal() {
+    let datos = [];
 
+    productos.forEach((p, i) => {
+        let inputs = document.querySelectorAll(`input[data-row='${i}']`);
+        let valores = Array.from(inputs).map(i => i.value || "");
+
+        datos.push(valores);
+    });
+
+    localStorage.setItem("capturaTemporal", JSON.stringify(datos));
+}
+        
+// 🔥 INICIO
+document.addEventListener("DOMContentLoaded", function() {
+    crearTabla();
+    cargarTemporal();
+});
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js');
 }
 
+
+        
 </script>
