@@ -1,10 +1,7 @@
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open('app').then(cache => {
-      return cache.addAll([
-        'index.html',
-        'manifest.json'
-      ]);
-    })
-  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', e => {
+  self.clients.claim();
 });
