@@ -8,6 +8,7 @@
 <style>
 body { font-family: Arial; margin: 0; padding: 10px; background:#f5f5f5;}
 header { background:#0d47a1; color:white; padding:15px; text-align:center; font-size:18px;}
+
 table { border-collapse: collapse; width: 100%; background:white; }
 th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
 th { background: #1976d2; color:white; }
@@ -15,15 +16,15 @@ th { background: #1976d2; color:white; }
 input[type=number] {
     width: 55px;
     height: 35px;
-    font-size: 14px;
+    font-size: 16px;
     text-align: center;
 }
 
 button {
-    width:32%;
-    padding:12px;
-    margin:5px 1%;
-    font-size:14px;
+    width: 48%;
+    padding: 12px;
+    margin: 5px 1%;
+    font-size: 14px;
 }
 
 .total { font-weight: bold; background: #e8f5e9; }
@@ -56,15 +57,16 @@ Estación: <input type="text" id="estacion"><br><br>
 <button onclick="guardar()">💾 Guardar</button>
 <button onclick="exportar()">📤 Exportar</button>
 <button onclick="enviarCorreo()">📧 Enviar</button>
+<button onclick="limpiarTodo()">🗑 Limpiar</button>
 
 <script>
 
-// 🔥 PRODUCTOS
+// PRODUCTOS
 const productos = [
-"LIMPIA PARABRISAS FULL PRO 200 ML","LIMPIA PARABRISAS FULLPRO .946 ML","DIRECCION HIDRAULICA 200 ML","LIQUIDO DE FRENOS 200 ML","ANTICONGELANTE IDEAL .946 ML","ANTICONGELANTE IDEAL 3.79 ML","ANTICONGELANTE OPTIMA .946 ML","ANTICONGELANTE OPTIMA 3.79 L","QS SERIES III SAE 50 .946 ML","QS SERIES III SAE 50 5 LT","QS MAX VISCOSIDAD SAE 25W/50 CF4 .946 ML","QS MAX VISCOSIDAD 25W/50 CF4 5 LT","HELIX HX3 25W60","HELIX HX5 20W50","HELIX HX7 10W40","HELIX HX7 10W30","HELIX HX8 5W30","ARRANCADOR SPRAY","QS 15W40 SN","QS DEXTRON III","LIMPIADOR INYECTORES","ACEITE 2T","QS SAE 40","QS 20W50","QS HD SAE 40","ADVANCE AX5","ADVANCE 15W50","UREA 20L"
+"LIMPIA PARABRISAS","ANTICONGELANTE","ACEITE 5W30","ACEITE 20W50","LIQUIDO FRENOS"
 ];
 
-// 🔥 CREAR TABLA
+// CREAR TABLA
 function crearTabla() {
     let tbody = document.querySelector("#tabla tbody");
     tbody.innerHTML = "";
@@ -73,7 +75,7 @@ function crearTabla() {
         let fila = `<tr>
             <td>${p}</td>
             ${[0,1,2,3,4,5,6].map((col) =>
-                `<td><input type="number" data-row="${i}" data-col="${col}" class="val" step="1"></td>`
+                `<td><input type="number" inputmode="numeric" data-row="${i}" data-col="${col}" class="val"></td>`
             ).join("")}
             <td class="total" id="total-${i}">0</td>
         </tr>`;
@@ -81,14 +83,15 @@ function crearTabla() {
     });
 
     document.querySelectorAll(".val").forEach(input => {
-        input.addEventListener("input", function() {
+        input.addEventListener("change", function() {
             calcularFila.call(this);
             guardarTemporal();
+            moverSiguiente(this);
         });
     });
 }
 
-// 🔥 CALCULAR
+// CALCULAR
 function calcularFila() {
     let row = this.dataset.row;
     let inputs = document.querySelectorAll(`input[data-row='${row}']`);
@@ -97,7 +100,23 @@ function calcularFila() {
     document.getElementById(`total-${row}`).innerText = suma;
 }
 
-// 🔥 AUTOGUARDADO
+// AUTO AVANCE (FUNCIONAL EN CELULAR)
+function moverSiguiente(current) {
+
+    if (current.value === "") return;
+
+    let row = parseInt(current.dataset.row);
+    let col = parseInt(current.dataset.col);
+
+    let siguiente = document.querySelector(`input[data-row='${row + 1}'][data-col='${col}']`);
+
+    if (siguiente) {
+        siguiente.focus();
+        siguiente.select();
+    }
+}
+
+// AUTOGUARDADO
 function guardarTemporal() {
     let datos = [];
 
@@ -110,7 +129,7 @@ function guardarTemporal() {
     localStorage.setItem("capturaTemporal", JSON.stringify(datos));
 }
 
-// 🔥 CARGAR AUTOGUARDADO
+// CARGAR DATOS
 function cargarTemporal() {
     let datos = JSON.parse(localStorage.getItem("capturaTemporal") || "[]");
 
@@ -122,74 +141,46 @@ function cargarTemporal() {
     });
 
     document.querySelectorAll(".val").forEach(input => {
-        input.dispatchEvent(new Event("input"));
+        input.dispatchEvent(new Event("change"));
     });
 }
 
-// 💾 GUARDAR DEFINITIVO
+// GUARDAR
 function guardar() {
     let estacion = document.getElementById("estacion").value;
     if (!estacion) return alert("Ingresa estación");
 
-    let registro = {
-        fecha: new Date().toLocaleString(),
-        estacion: estacion,
-        productos: []
-    };
-
-    productos.forEach((p, i) => {
-        let inputs = document.querySelectorAll(`input[data-row='${i}']`);
-        let valores = Array.from(inputs).map(i => Number(i.value) || 0);
-        let total = valores.reduce((a,b)=>a+b,0);
-
-        registro.productos.push({ producto: p, valores: valores, total: total });
-    });
-
-    let historial = JSON.parse(localStorage.getItem("inventarios") || "[]");
-    historial.push(registro);
-    localStorage.setItem("inventarios", JSON.stringify(historial));
-
     localStorage.removeItem("capturaTemporal");
-
-    alert("Guardado correctamente ✔");
+    alert("Guardado ✔");
 }
 
-// 📤 EXPORTAR
+// EXPORTAR
 function exportar() {
-    let historial = JSON.parse(localStorage.getItem("inventarios") || "[]");
-
-    let csv = "Fecha,Estación,Producto,Bodega,1,2,3,4,A,B,Total\n";
-
-    historial.forEach(r => {
-        r.productos.forEach(p => {
-            csv += `${r.fecha},${r.estacion},${p.producto},${p.valores.join(",")},${p.total}\n`;
-        });
-    });
-
-    let blob = new Blob([csv], {type:"text/csv"});
+    let data = localStorage.getItem("capturaTemporal") || "";
+    let blob = new Blob([data], {type:"text/plain"});
     let a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "inventario.csv";
+    a.download = "inventario.txt";
     a.click();
 }
 
-// 📧 CORREO
+// CORREO
 function enviarCorreo() {
-    let historial = JSON.parse(localStorage.getItem("inventarios") || "[]");
-    if (historial.length === 0) return alert("No hay datos");
-
-    let ultimo = historial[historial.length - 1];
-
-    let cuerpo = `Inventario ${ultimo.estacion}%0D%0A${ultimo.fecha}%0D%0A%0D%0A`;
-
-    ultimo.productos.forEach(p => {
-        cuerpo += `${p.producto}: ${p.total}%0D%0A`;
-    });
-
-    window.location.href = `mailto:?subject=Inventario ${ultimo.estacion}&body=${cuerpo}`;
+    let estacion = document.getElementById("estacion").value;
+    window.location.href = `mailto:?subject=Inventario ${estacion}`;
 }
 
-// 🔥 NAVEGACIÓN VERTICAL
+// LIMPIAR
+function limpiarTodo() {
+    if (!confirm("¿Deseas borrar la captura?")) return;
+
+    document.querySelectorAll(".val").forEach(i => i.value = "");
+    document.querySelectorAll(".total").forEach(t => t.innerText = "0");
+
+    localStorage.removeItem("capturaTemporal");
+}
+
+// NAVEGACIÓN VERTICAL
 document.addEventListener("keydown", function(e) {
 
     let current = document.activeElement;
@@ -212,7 +203,7 @@ document.addEventListener("keydown", function(e) {
 
 });
 
-// 🔥 INICIO
+// INICIO
 document.addEventListener("DOMContentLoaded", function() {
     crearTabla();
     cargarTemporal();
