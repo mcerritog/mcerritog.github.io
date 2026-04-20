@@ -151,10 +151,38 @@ function cargarTemporal() {
 // GUARDAR
 function guardar() {
     let estacion = document.getElementById("estacion").value;
-    if (!estacion) return alert("Ingresa estación");
+
+    if (!estacion) {
+        alert("Ingresa estación");
+        return;
+    }
+
+    let registro = {
+        fecha: new Date().toLocaleString(),
+        estacion: estacion,
+        productos: []
+    };
+
+    productos.forEach((p, i) => {
+        let inputs = document.querySelectorAll(`input[data-row='${i}']`);
+        let valores = Array.from(inputs).map(i => Number(i.value) || 0);
+        let total = valores.reduce((a,b)=>a+b,0);
+
+        registro.productos.push({
+            producto: p,
+            valores: valores,
+            total: total
+        });
+    });
+
+    let historial = JSON.parse(localStorage.getItem("inventarios") || "[]");
+    historial.push(registro);
+
+    localStorage.setItem("inventarios", JSON.stringify(historial));
 
     localStorage.removeItem("capturaTemporal");
-    alert("Guardado ✔");
+
+    alert("Inventario guardado correctamente ✔");
 }
 
 // EXPORTAR
