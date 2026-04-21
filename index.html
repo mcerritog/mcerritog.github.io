@@ -31,7 +31,7 @@ button {
 }
 
 .total { font-weight: bold; background: #e8f5e9; }
-#reporte { background:white; padding:10px; }
+#reporte { background:white; padding:10px; margin-top:15px; }
 </style>
 </head>
 
@@ -58,39 +58,58 @@ Estación: <input type="text" id="estacion"><br><br>
 <tbody></tbody>
 </table>
 
-<!-- 🔥 REPORTE -->
 <div id="reporte"></div>
 
-<button onclick="calc('4')">4</button>
-<button onclick="calc('5')">5</button>
-<button onclick="calc('6')">6</button>
-<button onclick="calc('*')">×</button>
-
-<button onclick="calc('1')">1</button>
-<button onclick="calc('2')">2</button>
-<button onclick="calc('3')">3</button>
-<button onclick="calc('-')">-</button>
-
-<button onclick="calc('0')">0</button>
-<button onclick="calc('.')">.</button>
-<button onclick="calcularResultado()">=</button>
-<button onclick="calc('+')">+</button>
-</div>
-
-<button style="width:100%; margin-top:5px;" onclick="insertarResultado()">✔ Usar resultado</button>
-<button style="width:100%; margin-top:5px;" onclick="cerrarCalculadora()">❌ Cerrar</button>
-
-</div>
-    
 <button onclick="guardar()">💾 Guardar</button>
 <button onclick="exportar()">📤 Exportar</button>
 <button onclick="enviarCorreo()">📧 Enviar</button>
 <button onclick="limpiarTodo()">🗑 Limpiar</button>
 <button onclick="verHistorialDetalle()">📊 Ver Inventarios</button>
 <button onclick="abrirCalculadora()">🧮 Calculadora</button>
-    
+
+<!-- 🧮 CALCULADORA -->
+<div id="calcVentana" style="display:none; position:fixed; top:100px; left:50px; width:260px; background:white; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.3); z-index:9999;">
+
+<div id="calcHeader" style="background:#0d47a1; color:white; padding:10px; cursor:move;">
+🧮 Calculadora
+<span style="float:right; cursor:pointer;" onclick="cerrarCalculadora()">✖</span>
+</div>
+
+<input type="text" id="calcDisplay" readonly style="width:100%; height:50px; font-size:20px; text-align:right; border:none; padding:10px;">
+
+<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:5px; padding:10px;">
+
+<button onclick="limpiarCalc()">C</button>
+<button onclick="borrarUltimo()">⌫</button>
+<button onclick="calc('%')">%</button>
+<button onclick="calc('/')">÷</button>
+
+<button onclick="calc('7')">7</button>
+<button onclick="calc('8')">8</button>
+<button onclick="calc('9')">9</button>
+<button onclick="calc('*')">×</button>
+
+<button onclick="calc('4')">4</button>
+<button onclick="calc('5')">5</button>
+<button onclick="calc('6')">6</button>
+<button onclick="calc('-')">-</button>
+
+<button onclick="calc('1')">1</button>
+<button onclick="calc('2')">2</button>
+<button onclick="calc('3')">3</button>
+<button onclick="calc('+')">+</button>
+
+<button onclick="calc('0')">0</button>
+<button onclick="calc('.')">.</button>
+<button onclick="calcularResultado()">=</button>
+<button onclick="insertarResultado()">✔</button>
+
+</div>
+
+</div>
+
 <script>
-    
+
 // PRODUCTOS
 const productos = [
 "LIMPIA PARABRISAS FULL PRO 200 ML","LIMPIA PARABRISAS FULLPRO .946 ML","DIRECCION HIDRAULICA 200 ML","LIQUIDO DE FRENOS 200 ML","ANTICONGELANTE IDEAL .946 ML","ANTICONGELANTE  IDEAL 3.79 ML","ANTICONGELANTE  OPTIMA .946 ML","ANTICONGELANTE  OPTIMA 3.79 L","QS SERIES III SAE 50 .946 ML","QS SERIES III SAE 50 5 LT","QS MAX VISCOSIDAD SAE 25W/50 CF4 .946 ML","QS MAX VISCOSIDAD SEA 25W/50 CF4 5 LT","HELIX HX3 HM25W60 SL_A1W9","HELIX HX5 SN 20W50 _A1W9","HHELIX HX7 SN 10W40 SN_A1W9","HLX HX7 SN PLUS 10W30 SN_LATA","HLX HX8 PRO AG5W30 DEX1_LATA","FULL PRO ARRANCADOR SPRAY 400 ML","QS ALTO KILOMETRAJE SAE 15W40 API SN","QS DEXTRONATF III","QS LIMPIADOR DE INYECTORES (XTREME GAS)","QS POWER RIDER 2T J-FB","QS SERIES III SAE 40","QS RACING MULT. SAE 20W50","QS HD SAE 40","ADVANCE AX 5 MOTOS 20 .946 ML","SHELL ADVAN 4TUL MOTOS SAE 15W-50 SN","BIDON UREA ULTRA BLUE 20 LTS"
@@ -104,7 +123,7 @@ function crearTabla() {
     productos.forEach((p, i) => {
         let fila = `<tr>
             <td>${p}</td>
-            ${[0,1,2,3,4,5,6].map((col) =>
+            ${[0,1,2,3,4,5,6].map(col =>
                 `<td><input type="number" inputmode="numeric" data-row="${i}" data-col="${col}" class="val"></td>`
             ).join("")}
             <td class="total" id="total-${i}">0</td>
@@ -132,236 +151,122 @@ function calcularFila() {
 
 // AUTO AVANCE
 function moverSiguiente(current) {
-    if (current.value === "") return;
-
-    let row = parseInt(current.dataset.row);
-    let col = parseInt(current.dataset.col);
-
-    let siguiente = document.querySelector(`input[data-row='${row + 1}'][data-col='${col}']`);
-
-    if (siguiente) {
-        siguiente.focus();
-        siguiente.select();
-    }
+    if (!current.value) return;
+    let next = document.querySelector(`input[data-row='${+current.dataset.row+1}'][data-col='${current.dataset.col}']`);
+    if (next) next.focus();
 }
 
 // AUTOGUARDADO
 function guardarTemporal() {
-    let datos = [];
-
-    productos.forEach((p, i) => {
-        let inputs = document.querySelectorAll(`input[data-row='${i}']`);
-        let valores = Array.from(inputs).map(i => i.value || "");
-        datos.push(valores);
-    });
-
+    let datos = productos.map((_, i) =>
+        Array.from(document.querySelectorAll(`input[data-row='${i}']`)).map(i => i.value || "")
+    );
     localStorage.setItem("capturaTemporal", JSON.stringify(datos));
 }
 
 // CARGAR
 function cargarTemporal() {
     let datos = JSON.parse(localStorage.getItem("capturaTemporal") || "[]");
-
-    datos.forEach((fila, i) => {
-        fila.forEach((valor, j) => {
-            let input = document.querySelectorAll(`input[data-row='${i}']`)[j];
-            if (input) input.value = valor;
+    datos.forEach((fila,i)=>{
+        fila.forEach((v,j)=>{
+            let inp=document.querySelectorAll(`input[data-row='${i}']`)[j];
+            if(inp) inp.value=v;
         });
     });
-
-    document.querySelectorAll(".val").forEach(input => {
-        input.dispatchEvent(new Event("change"));
-    });
+    document.querySelectorAll(".val").forEach(i=>i.dispatchEvent(new Event("change")));
 }
 
-// GUARDAR DEFINITIVO
+// GUARDAR
 function guardar() {
-
     let estacion = document.getElementById("estacion").value;
     if (!estacion) return alert("Ingresa estación");
 
     let registro = {
         fecha: new Date().toLocaleString(),
-        estacion: estacion,
-        productos: []
+        estacion,
+        productos: productos.map((p,i)=>{
+            let vals = Array.from(document.querySelectorAll(`input[data-row='${i}']`)).map(i=>Number(i.value)||0);
+            return { producto:p, valores:vals, total:vals.reduce((a,b)=>a+b,0) };
+        })
     };
-
-    productos.forEach((p, i) => {
-        let inputs = document.querySelectorAll(`input[data-row='${i}']`);
-        let valores = Array.from(inputs).map(i => Number(i.value) || 0);
-        let total = valores.reduce((a,b)=>a+b,0);
-
-        registro.productos.push({ producto: p, valores: valores, total: total });
-    });
 
     let historial = JSON.parse(localStorage.getItem("inventarios") || "[]");
     historial.push(registro);
-
     localStorage.setItem("inventarios", JSON.stringify(historial));
-    localStorage.removeItem("capturaTemporal");
 
-    alert("Inventario guardado ✔");
+    localStorage.removeItem("capturaTemporal");
+    alert("Guardado ✔");
 }
 
 // EXPORTAR
 function exportar() {
-    let data = localStorage.getItem("inventarios") || "";
-    let blob = new Blob([data], {type:"text/plain"});
-    let a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "inventarios.txt";
+    let blob=new Blob([localStorage.getItem("inventarios")||""],{type:"text/plain"});
+    let a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="inventarios.txt";
     a.click();
 }
 
 // CORREO
 function enviarCorreo() {
-    let estacion = document.getElementById("estacion").value;
-    window.location.href = `mailto:?subject=Inventario ${estacion}`;
+    window.location.href=`mailto:?subject=Inventario ${document.getElementById("estacion").value}`;
 }
 
 // LIMPIAR
 function limpiarTodo() {
-    if (!confirm("¿Deseas borrar la captura?")) return;
-
-    document.querySelectorAll(".val").forEach(i => i.value = "");
-    document.querySelectorAll(".total").forEach(t => t.innerText = "0");
-
+    if(!confirm("¿Borrar captura?")) return;
+    document.querySelectorAll(".val").forEach(i=>i.value="");
+    document.querySelectorAll(".total").forEach(t=>t.innerText="0");
     localStorage.removeItem("capturaTemporal");
 }
 
-// 🔥 VER INVENTARIOS
-function verHistorialDetalle() {
-
-    let historial = JSON.parse(localStorage.getItem("inventarios") || "[]");
-
-    if (historial.length === 0) {
-        alert("No hay inventarios guardados");
-        return;
-    }
-
-    let lista = "Selecciona el número:\n\n";
-
-    historial.forEach((r, i) => {
-        lista += `${i+1}. ${r.estacion} - ${r.fecha}\n`;
-    });
-
-    let opcion = prompt(lista);
-    if (!opcion) return;
-
-    let index = parseInt(opcion) - 1;
-    if (index < 0 || index >= historial.length) return;
-
-    mostrarDetalle(historial[index]);
+// HISTORIAL
+function verHistorialDetalle(){
+let h=JSON.parse(localStorage.getItem("inventarios")||"[]");
+if(!h.length) return alert("Sin datos");
+let lista=h.map((r,i)=>`${i+1}. ${r.estacion} - ${r.fecha}`).join("\n");
+let i=parseInt(prompt(lista))-1;
+if(h[i]) mostrarDetalle(h[i]);
 }
 
-// MOSTRAR DETALLE
-function mostrarDetalle(data) {
-
-    let html = `
-    <h3>📊 Inventario</h3>
-    <b>Estación:</b> ${data.estacion}<br>
-    <b>Fecha:</b> ${data.fecha}<br><br>
-
-    <table>
-    <tr>
-        <th>Producto</th>
-        <th>Total</th>
-    </tr>
-    `;
-
-    data.productos.forEach(p => {
-        html += `
-        <tr>
-            <td>${p.producto}</td>
-            <td>${p.total}</td>
-        </tr>
-        `;
-    });
-
-    html += "</table>";
-
-    document.getElementById("reporte").innerHTML = html;
+function mostrarDetalle(d){
+let html=`<h3>${d.estacion}</h3><small>${d.fecha}</small><table><tr><th>Producto</th><th>Total</th></tr>`;
+d.productos.forEach(p=>html+=`<tr><td>${p.producto}</td><td>${p.total}</td></tr>`);
+html+="</table>";
+document.getElementById("reporte").innerHTML=html;
 }
 
-let inputActivo = null;
+// 🧮 CALCULADORA
+let inputActivo=null;
 
-// Detectar input activo
-document.addEventListener("focusin", function(e) {
-    if (e.target.classList.contains("val")) {
-        inputActivo = e.target;
-    }
+document.addEventListener("focusin",e=>{
+if(e.target.classList.contains("val")) inputActivo=e.target;
 });
 
-// Abrir / cerrar
-function abrirCalculadora() {
-    document.getElementById("calc").style.display = "block";
+function abrirCalculadora(){calcVentana.style.display="block";}
+function cerrarCalculadora(){calcVentana.style.display="none";}
+function calc(v){calcDisplay.value+=v;}
+function calcularResultado(){try{calcDisplay.value=eval(calcDisplay.value);}catch{alert("Error");}}
+function insertarResultado(){
+if(!inputActivo)return alert("Selecciona celda");
+inputActivo.value=calcDisplay.value;
+inputActivo.dispatchEvent(new Event("change"));
+cerrarCalculadora();
 }
+function limpiarCalc(){calcDisplay.value="";}
+function borrarUltimo(){calcDisplay.value=calcDisplay.value.slice(0,-1);}
 
-function cerrarCalculadora() {
-    document.getElementById("calc").style.display = "none";
-}
+// MOVER VENTANA
+let calcVentana=document.getElementById("calcVentana");
+let calcHeader=document.getElementById("calcHeader");
+let x=0,y=0,drag=false;
 
-// Escribir en calculadora
-function calc(valor) {
-    document.getElementById("calcDisplay").value += valor;
-}
-
-// Calcular
-function calcularResultado() {
-    try {
-        let resultado = eval(document.getElementById("calcDisplay").value);
-        document.getElementById("calcDisplay").value = resultado;
-    } catch {
-        alert("Error en cálculo");
-    }
-}
-
-// Insertar resultado en input activo
-function insertarResultado() {
-
-    if (!inputActivo) {
-        alert("Selecciona una celda primero");
-        return;
-    }
-
-    let valor = document.getElementById("calcDisplay").value;
-
-    inputActivo.value = valor;
-
-    // Dispara cálculo y guardado
-    inputActivo.dispatchEvent(new Event("change"));
-
-    cerrarCalculadora();
-}
-    
-// NAVEGACIÓN
-document.addEventListener("keydown", function(e) {
-
-    let current = document.activeElement;
-    if (!current.classList.contains("val")) return;
-
-    let row = parseInt(current.dataset.row);
-    let col = parseInt(current.dataset.col);
-
-    if (e.key === "Enter" || e.key === "ArrowDown") {
-        e.preventDefault();
-        let next = document.querySelector(`input[data-row='${row + 1}'][data-col='${col}']`);
-        if (next) next.focus();
-    }
-
-    if (e.key === "ArrowUp") {
-        e.preventDefault();
-        let prev = document.querySelector(`input[data-row='${row - 1}'][data-col='${col}']`);
-        if (prev) prev.focus();
-    }
-
-});
+calcHeader.onmousedown=e=>{drag=true;x=calcVentana.offsetLeft-e.clientX;y=calcVentana.offsetTop-e.clientY;}
+document.onmouseup=()=>drag=false;
+document.onmousemove=e=>{if(drag){calcVentana.style.left=(e.clientX+x)+"px";calcVentana.style.top=(e.clientY+y)+"px";}};
 
 // INICIO
-document.addEventListener("DOMContentLoaded", function() {
-    crearTabla();
-    cargarTemporal();
-});
+document.addEventListener("DOMContentLoaded",()=>{crearTabla();cargarTemporal();});
 
 </script>
 
